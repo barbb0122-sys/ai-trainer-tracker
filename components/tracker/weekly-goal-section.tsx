@@ -111,6 +111,8 @@ export function WeeklyGoalSection({ tracker }: { tracker: TrackerActions }) {
         </div>
       }
     >
+      <GoalProgressBar earned={weekEarnings} goal={goal} progress={progress} />
+
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <div className="flex flex-col gap-4 rounded-lg border border-border bg-background p-4">
           <Field label="Gross weekly income goal (USD)" htmlFor={`${ids}-goal`}>
@@ -172,22 +174,6 @@ export function WeeklyGoalSection({ tracker }: { tracker: TrackerActions }) {
               value={formatCurrency(remaining)}
               sub={goal > 0 ? `Goal ${formatCurrency(goal)}` : 'No goal set'}
             />
-          </div>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">Progress to goal</span>
-              <span className="tabular-nums text-muted-foreground">{Math.round(progress)}%</span>
-            </div>
-            <div
-              className="h-3 overflow-hidden rounded-full bg-muted"
-              role="progressbar"
-              aria-label="Weekly goal progress"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(progress)}
-            >
-              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
-            </div>
           </div>
           <Stat
             tone="muted"
@@ -286,5 +272,61 @@ export function WeeklyGoalSection({ tracker }: { tracker: TrackerActions }) {
         )}
       </div>
     </Section>
+  )
+}
+
+const MILESTONES = [25, 50, 75]
+
+function GoalProgressBar({ earned, goal, progress }: { earned: number; goal: number; progress: number }) {
+  const percent = Math.round(progress)
+  const reached = goal > 0 && earned >= goal
+  const status =
+    goal <= 0
+      ? 'Set a weekly goal to track progress.'
+      : reached
+        ? `Goal reached. You earned ${formatCurrency(earned - goal)} over your goal this week.`
+        : `${formatCurrency(earned)} of ${formatCurrency(goal)} earned from hours this week.`
+
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-border bg-background p-4">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm font-medium">Weekly goal progress</p>
+          <p className="text-sm text-muted-foreground" aria-live="polite">
+            {status}
+          </p>
+        </div>
+        <p className="text-3xl font-semibold tabular-nums text-primary">{percent}%</p>
+      </div>
+      <div
+        className="relative h-4 overflow-hidden rounded-full bg-muted"
+        role="progressbar"
+        aria-label="Weekly goal progress"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+        aria-valuetext={status}
+      >
+        <div
+          className={`h-full rounded-full transition-[width] duration-500 ease-out ${reached ? 'bg-chart-2' : 'bg-primary'}`}
+          style={{ width: `${progress}%` }}
+        />
+        {MILESTONES.map((m) => (
+          <span
+            key={m}
+            aria-hidden="true"
+            className="absolute inset-y-0 w-px bg-background/70"
+            style={{ left: `${m}%` }}
+          />
+        ))}
+      </div>
+      <div className="flex justify-between text-xs tabular-nums text-muted-foreground" aria-hidden="true">
+        <span>$0</span>
+        {MILESTONES.map((m) => (
+          <span key={m}>{goal > 0 ? formatCurrency((goal * m) / 100) : `${m}%`}</span>
+        ))}
+        <span>{goal > 0 ? formatCurrency(goal) : '100%'}</span>
+      </div>
+    </div>
   )
 }
